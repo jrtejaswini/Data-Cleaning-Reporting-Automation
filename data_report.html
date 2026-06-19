@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Cleaning & Reporting — Thiranex Project 4</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg:       #0f1117;
+    --surface:  #1a1d27;
+    --card:     #21253a;
+    --accent:   #4f8ef7;
+    --accent2:  #38d9a9;
+    --accent3:  #f7c948;
+    --danger:   #f76e6e;
+    --text:     #e2e8f0;
+    --muted:    #8892aa;
+    --border:   #2d3352;
+    --radius:   12px;
+    --font:     'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    line-height: 1.6;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, #131729 0%, #1c2444 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 28px;
+  }
+  header .eyebrow {
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+  header .meta {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── Layout ── */
+  main { padding: 32px 40px; max-width: 1200px; margin: 0 auto; }
+  section { margin-bottom: 40px; }
+  h2 {
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── KPI Cards ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 0;
+  }
+  .kpi-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--accent);
+  }
+  .kpi-card.green::before  { background: var(--accent2); }
+  .kpi-card.yellow::before { background: var(--accent3); }
+  .kpi-card.red::before    { background: var(--danger);  }
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: #fff; }
+  .kpi-sub   { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* ── Chart Grid ── */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .chart-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 900px) {
+    .chart-grid, .chart-grid.three { grid-template-columns: 1fr; }
+  }
+  .chart-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+  }
+  .chart-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  .chart-card canvas { width: 100% !important; }
+
+  /* ── Cleaning Log Table ── */
+  .log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .log-table th, .log-table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .log-table th {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+  .log-table tr:last-child td { border-bottom: none; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-info    { background: rgba(79,142,247,.18); color: var(--accent);  }
+  .badge-success { background: rgba(56,217,169,.18); color: var(--accent2); }
+  .badge-warn    { background: rgba(247,201,72,.18); color: var(--accent3); }
+  .badge-danger  { background: rgba(247,110,110,.18); color: var(--danger); }
+
+  /* ── Issues Panel ── */
+  .issue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+  }
+  .issue-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .issue-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+  .issue-label { font-size: 13px; color: var(--muted); }
+  .issue-count { font-size: 20px; font-weight: 700; color: #fff; }
+
+  footer {
+    text-align: center;
+    padding: 24px 40px;
+    font-size: 12px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Thiranex · Project 4 · Data Cleaning &amp; Reporting Automation</p>
+  <h1>Sales Data Report</h1>
+  <p class="meta">Generated: June 16, 2026 — 03:11 PM &nbsp;|&nbsp; Source: sample_dirty_data.csv &nbsp;|&nbsp; Cleaned records: 31</p>
+</header>
+
+<main>
+
+  <!-- KPIs -->
+  <section>
+    <h2>Key Metrics — Cleaned Dataset</h2>
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Orders</div>
+        <div class="kpi-value">31</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Total Revenue</div>
+        <div class="kpi-value">₱831,600.00</div>
+      </div>
+      <div class="kpi-card yellow">
+        <div class="kpi-label">Avg Order Value</div>
+        <div class="kpi-value">₱26,825.81</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">Total Units Sold</div>
+        <div class="kpi-value">59</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Data Quality Audit -->
+  <section>
+    <h2>Data Quality Issues Found</h2>
+    <div class="issue-grid">
+      <div class="issue-item">
+        <span class="issue-icon">📋</span>
+        <div>
+          <div class="issue-label">Raw Rows Loaded</div>
+          <div class="issue-count">32</div>
+        </div>
+      </div>
+      <div class="issue-item">
+        <span class="issue-icon">🔁</span>
+        <div>
+          <div class="issue-label">Duplicate Rows</div>
+          <div class="issue-count">1</div>
+        </div>
+      </div>
+      <div class="issue-item">
+        <span class="issue-icon">❓</span>
+        <div>
+          <div class="issue-label">Missing Values</div>
+          <div class="issue-count">5</div>
+        </div>
+      </div>
+      <div class="issue-item">
+        <span class="issue-icon">📅</span>
+        <div>
+          <div class="issue-label">Date Format Variants</div>
+          <div class="issue-count">2</div>
+        </div>
+      </div>
+      <div class="issue-item">
+        <span class="issue-icon">🔡</span>
+        <div>
+          <div class="issue-label">Region Casing Issues</div>
+          <div class="issue-count">7</div>
+        </div>
+      </div>
+      <div class="issue-item">
+        <span class="issue-icon">🏷️</span>
+        <div>
+          <div class="issue-label">Category Variants</div>
+          <div class="issue-count">4</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cleaning Log -->
+  <section>
+    <h2>Cleaning Steps Applied</h2>
+    <div class="chart-card">
+      <table class="log-table">
+        <thead>
+          <tr><th>Cleaning Action</th><th>Records Affected</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Duplicate rows removed</td><td><span class="badge badge-danger">1</span></td></tr>
+          <tr><td>Text columns casing standardised</td><td><span class="badge badge-info">6</span></td></tr>
+          <tr><td>Date formats normalised (→ YYYY-MM-DD)</td><td><span class="badge badge-info">All</span></td></tr>
+          <tr><td>Quantity imputed (category median)</td><td><span class="badge badge-warn">3</span></td></tr>
+          <tr><td>UnitPrice imputed (product median)</td><td><span class="badge badge-warn">1</span></td></tr>
+          <tr><td>Missing CustomerName → 'Unknown'</td><td><span class="badge badge-warn">1</span></td></tr>
+          <tr><td>Revenue column derived</td><td><span class="badge badge-success">31</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Charts Row 1 -->
+  <section>
+    <h2>Revenue Analysis</h2>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Revenue by Region</h3>
+        <canvas id="regionChart" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Revenue by Category</h3>
+        <canvas id="categoryChart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Charts Row 2 -->
+  <section>
+    <h2>Orders &amp; Products</h2>
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>Order Status Breakdown</h3>
+        <canvas id="statusChart" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Top 5 Products by Revenue</h3>
+        <canvas id="productChart" height="220"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Daily Trend -->
+  <section>
+    <h2>Daily Revenue Trend</h2>
+    <div class="chart-card">
+      <h3>Revenue Over Time</h3>
+      <canvas id="trendChart" height="120"></canvas>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Data Cleaning &amp; Reporting Automation &nbsp;|&nbsp; Auto-generated report
+</footer>
+
+<script>
+const COLORS = ['#4f8ef7','#38d9a9','#f7c948','#f76e6e','#b07ef7','#f79e4f'];
+const GRID   = 'rgba(255,255,255,0.06)';
+const TEXT   = '#8892aa';
+const defaults = {
+  responsive: true,
+  plugins: { legend: { labels: { color: TEXT, font: { size: 12 } } } },
+};
+
+// Region Bar
+new Chart(document.getElementById('regionChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Luzon", "Mindanao", "Visayas"],
+    datasets: [{ label: 'Revenue (₱)', data: [376000.0, 265100.0, 190500.0],
+      backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }]
+  },
+  options: { ...defaults, scales: {
+    x: { ticks: { color: TEXT }, grid: { color: GRID } },
+    y: { ticks: { color: TEXT, callback: v => '₱' + v.toLocaleString() }, grid: { color: GRID } }
+  }, plugins: { ...defaults.plugins, legend: { display: false } } }
+});
+
+// Category Bar
+new Chart(document.getElementById('categoryChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Electronics", "Furniture"],
+    datasets: [{ label: 'Revenue (₱)', data: [727600.0, 104000.0],
+      backgroundColor: ['#4f8ef7','#38d9a9'], borderRadius: 6, borderSkipped: false }]
+  },
+  options: { ...defaults, indexAxis: 'y', scales: {
+    x: { ticks: { color: TEXT, callback: v => '₱' + v.toLocaleString() }, grid: { color: GRID } },
+    y: { ticks: { color: TEXT }, grid: { color: GRID } }
+  }, plugins: { ...defaults.plugins, legend: { display: false } } }
+});
+
+// Status Doughnut
+new Chart(document.getElementById('statusChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ["Completed", "Pending", "Cancelled"],
+    datasets: [{ data: [21, 6, 4], backgroundColor: ['#38d9a9','#f7c948','#f76e6e'],
+      borderWidth: 0, hoverOffset: 6 }]
+  },
+  options: { ...defaults, cutout: '65%' }
+});
+
+// Product Bar
+new Chart(document.getElementById('productChart'), {
+  type: 'bar',
+  data: {
+    labels: ["Laptop", "Smartphone", "Monitor", "Desk Chair", "Office Desk"],
+    datasets: [{ label: 'Revenue (₱)', data: [450000.0, 129500.0, 105000.0, 68000.0, 36000.0],
+      backgroundColor: COLORS, borderRadius: 6, borderSkipped: false }]
+  },
+  options: { ...defaults, scales: {
+    x: { ticks: { color: TEXT }, grid: { color: GRID } },
+    y: { ticks: { color: TEXT, callback: v => '₱' + v.toLocaleString() }, grid: { color: GRID } }
+  }, plugins: { ...defaults.plugins, legend: { display: false } } }
+});
+
+// Daily Trend Line
+new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: ["2024-01-15", "2024-01-16", "2024-01-17", "2024-01-18", "2024-01-19", "2024-01-20", "2024-01-21", "2024-01-22", "2024-01-23", "2024-01-24", "2024-01-25", "2024-01-26", "2024-01-27", "2024-01-28", "2024-01-29", "2024-01-30", "2024-01-31", "2024-02-01", "2024-02-02", "2024-02-03"],
+    datasets: [{
+      label: 'Daily Revenue (₱)',
+      data: [135000.0, 45500.0, 45000.0, 7500.0, 30000.0, 12000.0, 43000.0, 45000.0, 35500.0, 15000.0, 50000.0, 15600.0, 30000.0, 55000.0, 35500.0, 120000.0, 6000.0, 17000.0, 63500.0, 25500.0],
+      borderColor: '#4f8ef7',
+      backgroundColor: 'rgba(79,142,247,0.12)',
+      fill: true,
+      tension: 0.35,
+      pointRadius: 4,
+      pointBackgroundColor: '#4f8ef7'
+    }]
+  },
+  options: { ...defaults, scales: {
+    x: { ticks: { color: TEXT, maxRotation: 45 }, grid: { color: GRID } },
+    y: { ticks: { color: TEXT, callback: v => '₱' + v.toLocaleString() }, grid: { color: GRID } }
+  } }
+});
+</script>
+</body>
+</html>
